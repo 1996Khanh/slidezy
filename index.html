@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+        <link rel="stylesheet" href="slidezy.css" />
+        <style>
+            * {
+                padding: 0;
+                margin: 0;
+                box-sizing: border-box;
+            }
+
+            .slidezy-slide {
+                padding: 30px;
+                text-align: center;
+            }
+            .slide-1 {
+                background: violet;
+            }
+
+            .slide-2 {
+                background: orange;
+            }
+
+            .slide-3 {
+                background: greenyellow;
+            }
+
+            .slide-4 {
+                background: yellow;
+            }
+
+            .slide-5 {
+                background: olive;
+            }
+
+            .slide-6 {
+                background: burlywood;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="my-slider">
+            <div class="slide-1">Slide 1</div>
+            <div class="slide-2">Slide 2</div>
+            <div class="slide-3">Slide 3</div>
+            <div class="slide-4">Slide 4</div>
+            <div class="slide-5">Slide 5</div>
+            <div class="slide-6">Slide 6</div>
+        </div>
+        <script src="./slidezy.js"></script>
+        <script>
+            const mySlider = new Slidezy("#my-slider", {
+                items: 1,
+                loop: true,
+                autoPlay: true,
+            });
+        </script>
+    </body>
+</html>
