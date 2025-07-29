@@ -1,9 +1,11 @@
 function Slidezy(selector, options = {}) {
     this.container = document.querySelector(selector);
+
     if (!this.container) {
-        console.error(`Slidezy: Container "${selector}" not found!`);
+        console.error(`Slidezy: Container "${selector}" not found`);
         return;
     }
+
     this.opt = Object.assign(
         {
             items: 1,
@@ -26,14 +28,40 @@ function Slidezy(selector, options = {}) {
 
     this.slides = this.originalSlides.slice(0);
 
-    this.currentIndex = this.opt.loop ? this.slides.length : 0;
+    this.currentIndex = this.opt.loop ? this.originalSlides.length : 0;
+
     this._init();
     this._updatePosition();
 }
 
+Slidezy.prototype._getSlideBy = function () {
+    if (this.opt.slideBy > this.originalSlides.length) {
+        this.opt.slideBy = (this.opt.slideBy + this.originalSlides.length) % this.originalSlides.length;
+    }
+
+    return (this.opt.slideBy = this.opt.slideBy === "page" ? this.opt.items : this.opt.slideBy);
+};
+
+Slidezy.prototype._startAutoPlay = function () {
+    if (this.autoPlayTimer) return;
+
+    const slideBy = this._getSlideBy();
+
+    this.autoPlayTimer = setInterval(() => {
+        this.moveSlide(slideBy);
+    }, this.opt.autoPlayTimeout);
+};
+
+Slidezy.prototype._stoptAutoPlay = function () {
+    clearInterval(this.autoPlayTimer);
+    this.autoPlayTimer = null;
+};
+
 Slidezy.prototype._init = function () {
     this.container.classList.add("slidezy-wrapper");
+
     this._createContent();
+
     this._createTrack();
 
     if (this.opt.controls) {
@@ -52,23 +80,6 @@ Slidezy.prototype._init = function () {
             this.container.onmouseleave = () => this._startAutoPlay();
         }
     }
-};
-
-Slidezy.prototype._startAutoPlay = function () {
-    if (this.autoPlayTimer) return;
-
-    if (this.opt.slideBy > this.originalSlides.length) {
-        this.opt.slideBy = (this.opt.slideBy + this.originalSlides.length) % this.originalSlides.length;
-    }
-    const slideBy = this.opt.slideBy === "page" ? this.opt.items : this.opt.slideBy;
-    this.autoPlayTimer = setInterval(() => {
-        this.moveSlide(slideBy);
-    }, this.opt.autoPlayTimeout);
-};
-
-Slidezy.prototype._stoptAutoPlay = function () {
-    clearInterval(this.autoPlayTimer);
-    this.autoPlayTimer = null;
 };
 
 Slidezy.prototype._createContent = function () {
@@ -96,7 +107,6 @@ Slidezy.prototype._createTrack = function () {
         slide.style.flexBasis = `calc(100% / ${this.opt.items})`;
         this.track.appendChild(slide);
     });
-
     this.content.appendChild(this.track);
 };
 
@@ -115,11 +125,7 @@ Slidezy.prototype._createControls = function () {
         this.nextBtn.className = "slidezy-next";
         this.content.appendChild(this.nextBtn);
     }
-
-    if (this.opt.slideBy > this.originalSlides.length) {
-        this.opt.slideBy = (this.opt.slideBy + this.originalSlides.length) % this.originalSlides.length;
-    }
-    const stepSize = this.opt.slideBy === "page" ? this.opt.items : this.opt.slideBy;
+    const stepSize = this._getSlideBy();
 
     this.prevBtn.onclick = () => this.moveSlide(-stepSize);
     this.nextBtn.onclick = () => this.moveSlide(stepSize);
@@ -130,6 +136,7 @@ Slidezy.prototype.moveSlide = function (step) {
     this._isAnimating = true;
 
     const maxIndex = this.opt.loop ? this.slides.length - this.opt.items : this.originalSlides.length - this.opt.items;
+
     this.currentIndex = Math.min(Math.max(this.currentIndex + step, 0), maxIndex);
 
     this._updatePosition();
@@ -139,7 +146,7 @@ Slidezy.prototype.moveSlide = function (step) {
             if (this.currentIndex <= this.originalSlides.length) {
                 this.currentIndex += this.originalSlides.length;
                 this._updatePosition(true);
-            } else if (this.currentIndex >= this.slides.length - this.originalSlides.length * 2) {
+            } else if (this.currentIndex >= this.originalSlides.length * 2) {
                 this.currentIndex -= this.originalSlides.length;
                 this._updatePosition(true);
             }
@@ -158,21 +165,16 @@ Slidezy.prototype._createNav = function () {
     for (let i = 0; i < pageCount; i++) {
         const dot = document.createElement("button");
         dot.className = "slidezy-dot";
-        dot.dataset.index = i;
 
         if (i === 0) dot.classList.add("active");
 
         dot.onclick = () => {
-            this.currentIndex = this.opt.loop
-                ? i * this.opt.items + this.originalSlides.length * 2
-                : i * this.opt.items;
+            this.currentIndex = this.opt.loop ? i * this.opt.items + this.originalSlides.length : i * this.opt.items;
 
             this._updatePosition();
         };
-
         this.navWrapper.appendChild(dot);
     }
-
     this.container.appendChild(this.navWrapper);
 };
 
@@ -183,11 +185,7 @@ Slidezy.prototype._updateNav = function () {
     let realIndex;
 
     if (this.opt.loop) {
-        realIndex = (this.currentIndex - this.originalSlides.length * 2) % realSlideCount;
-
-        if (realIndex < 0) {
-            realIndex += realSlideCount;
-        }
+        realIndex = this.currentIndex % realSlideCount;
     } else {
         realIndex = this.currentIndex;
     }
